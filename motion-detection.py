@@ -7,7 +7,7 @@ from datetime import datetime
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
-import picam
+import picamera
 
 # Motion detection settings:
 # Threshold (how much a pixel has to change by to be marked as "changed")
@@ -25,26 +25,28 @@ cmpHeigth = 100
 diskSpaceToReserve = 40 * 1024 * 1024 # Keep 40 mb free on disk
 basefolder = "/home/pi"
 
-picam.config.imageFX = picam.MMAL_PARAM_IMAGEFX_NONE
-picam.config.exposure = picam.MMAL_PARAM_EXPOSUREMODE_NIGHT
-picam.config.meterMode = picam.MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE
-picam.config.awbMode = picam.MMAL_PARAM_AWBMODE_OFF
-picam.config.ISO = 1600
+camera = picamera.PiCamera()
 
-picam.config.sharpness = 0               # -100 to 100
-picam.config.contrast = 0              # -100 to 100
-picam.config.brightness = 50             #  0 to 100
-picam.config.saturation = 10              #  -100 to 100
-picam.config.videoStabilisation = 0      # 0 or 1 (false or true)
-picam.config.exposureCompensation  = +5   # -10 to +10 ?
-picam.config.rotation = 0               # 0-359
-picam.config.hflip = 0                   # 0 or 1
-picam.config.vflip = 0                   # 0 or 1
-picam.config.shutterSpeed = 25000
+#camera.config.imageFX = camera.MMAL_PARAM_IMAGEFX_NONE
+#camera.config.exposure = camera.MMAL_PARAM_EXPOSUREMODE_NIGHT
+#camera.config.meterMode = camera.MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE
+#camera.config.awbMode = camera.MMAL_PARAM_AWBMODE_OFF
+camera.ISO = 800
+
+picamera.sharpness = 0               # -100 to 100
+picamera.contrast = 0              # -100 to 100
+picamera.brightness = 50             #  0 to 100
+picamera.saturation = 10              #  -100 to 100
+picamera.videoStabilisation = 0      # 0 or 1 (false or true)
+picamera.exposureCompensation  = +5   # -10 to +10 ?
+picamera.rotation = 0               # 0-359
+picamera.hflip = 0                   # 0 or 1
+picamera.vflip = 0                   # 0 or 1
+picamera.shutterSpeed = 25000
 
 # Capture a small test image (for motion detection)
 def captureTestImage():
-    im = picam.takeRGBPhotoWithDetails(cmpWidth,cmpHeigth)
+    im = camera.capture('test.png', 'rgb')
     return im
 
 def drawTimestampOnPicture(pic):
@@ -64,7 +66,7 @@ def drawTimestampOnPicture(pic):
     return pic
 
 def captureWebImage():
-    pic = picam.takePhotoWithDetails(1296, 972, 20)
+    pic = camera.takePhotoWithDetails(1296, 972, 20)
     drawTimestampOnPicture(pic)
     pic.save("/tmp/capturedimage.jpg")
 
@@ -83,7 +85,7 @@ def saveImage(width, height, diskSpaceToReserve):
 
     for x in range(1,2):
         filename = "%s/cam-%02d%02d%02d-%02d.jpg" % (folder, time.hour, time.minute, time.second, x)
-        pic = picam.takePhotoWithDetails(width, height, quality)
+        pic = camera.takePhotoWithDetails(width, height, quality)
         drawTimestampOnPicture(pic)
         pic.save(filename)
     
@@ -122,7 +124,7 @@ print "cmpMaxPixels:",cmpMaxPixels
 while (True):
     # Get comparison image
     image2 = captureTestImage()
-    (modified,changedPixels) = picam.difference(image1,image2,threshold)
+    (modified,changedPixels) = camera.difference(image1,image2,threshold)
     image1 = image2
     
     logtime = datetime.now()    
@@ -132,8 +134,8 @@ while (True):
         if changedPixels < cmpMaxPixels:
             print "%s - change detected" % timestamp, changedPixels
             saveImage(saveWidth, saveHeight, diskSpaceToReserve)
-            #picam.saveRGBToImage(image1, "/tmp/pic1.bmp", cmpWidth, cmpHeigth)
-            #picam.saveRGBToImage(image2, "/tmp/pic2.bmp", cmpWidth, cmpHeigth)
+            #picamera.saveRGBToImage(image1, "/tmp/pic1.bmp", cmpWidth, cmpHeigth)
+            #picamera.saveRGBToImage(image2, "/tmp/pic2.bmp", cmpWidth, cmpHeigth)
         else:
             print "%s - to many changed" % timestamp, changedPixels
 #    else:
